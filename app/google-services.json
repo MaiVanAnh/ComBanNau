@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "702425169277",
+    "firebase_url": "https://combannau-1520822090740.firebaseio.com",
+    "project_id": "combannau-1520822090740",
+    "storage_bucket": "combannau-1520822090740.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:702425169277:android:82959184a2071768",
+        "android_client_info": {
+          "package_name": "com.example.hoangcongtuan.combannau"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "702425169277-563vpmcfs4mkf7ngi3e66gg3hmk1013q.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.hoangcongtuan.combannau",
+            "certificate_hash": "c20e991faeb3c2d24105d9287568b4d91610d3da"
+          }
+        },
+        {
+          "client_id": "702425169277-pmr2ukfrt5hqfnul86tktr0en6q46o00.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApbsQ2ut3nMJ5ipDB1uGR7tDSgjPrwzjw"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "702425169277-pmr2ukfrt5hqfnul86tktr0en6q46o00.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
