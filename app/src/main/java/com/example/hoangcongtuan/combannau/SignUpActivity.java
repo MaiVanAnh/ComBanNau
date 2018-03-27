@@ -76,11 +76,14 @@ public class SignUpActivity extends AppCompatActivity implements View.OnClickLis
                             FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
                             DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
-                            DatabaseReference ref_user = reference.child("/user/" + currentUser.getUid() + "/profile/");
-                            ref_user.child("/user_name").setValue(userName);
-                            ref_user.child("/email").setValue(email);
-                            ref_user.child("/address").setValue(address);
-                            ref_user.child("/male").setValue(isMale);
+                            DatabaseReference ref_user_profile = reference.child("/user/" + currentUser.getUid() + "/profile/");
+                            ref_user_profile.child("/user_name").setValue(userName);
+                            ref_user_profile.child("/email").setValue(email);
+                            ref_user_profile.child("/address").setValue(address);
+                            ref_user_profile.child("/male").setValue(isMale);
+
+                            DatabaseReference ref_user = reference.child("/user/" + currentUser.getUid());
+                            ref_user.child("type").setValue(LoginActivity.CUSTOMER);
 
                             currentUser.sendEmailVerification();
 

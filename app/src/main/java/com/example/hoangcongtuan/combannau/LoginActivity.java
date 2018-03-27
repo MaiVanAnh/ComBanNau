@@ -1,5 +1,6 @@
 package com.example.hoangcongtuan.combannau;
 
+import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.annotation.NonNull;
@@ -19,6 +20,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.GoogleApi;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
@@ -33,6 +36,10 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener {
+
+    public final static String CUSTOMER = "customer";
+    public final static String PROVIDER = "provider";
+    public final static String ADMIN    = "admin";
 
     private static final String TAG = LoginActivity.class.getName();
     private static final int RC_SIGN_IN = 1;
@@ -51,6 +58,12 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         setContentView(R.layout.activity_login);
         init();
         initWidget();
+
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.default_web_client_id))
+                .requestEmail()
+                .build();
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
     }
 
     private void initWidget() {
@@ -73,17 +86,13 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
         btnLogin.setOnClickListener(this);
         btnLoginGG.setOnClickListener(this);
+
+
     }
 
     private void init() {
 
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id))
-                .requestEmail()
-                .build();
         // Build a GoogleSignInClient with the options specified by gso.
-        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-
 
 
     }
@@ -106,8 +115,11 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                             // Sign in success, update UI with the signed-in user's information
                             Log.d(TAG, "signInWithCredential:success");
                             FirebaseUser user = mAuth.getCurrentUser();
+
+                            //check profile
+
                             //updateUI(user);
-                            continueGooleSignIn(user);
+                            checkProfile(user);
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.w(TAG, "signInWithCredential:failure", task.getException());
@@ -120,7 +132,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 });
     }
 
-    private void continueGooleSignIn(final FirebaseUser user) {
+    private void checkProfile(final FirebaseUser user) {
         DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
         DatabaseReference ref_user = reference.child("/user/" + user.getUid() + "/profile/");
 
@@ -140,16 +152,16 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                                         user.sendEmailVerification();
                                     }
                                 }).show();
-                        return;
                     }
-
-                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                    startActivity(intent);
-                    finish();
+                    else {
+                        //email verified
+                        //check user type
+                        check_user_type();
+                    }
                 }
                 else {
                     //no profile
-                    Intent intent = new Intent(LoginActivity.this, ContinueGoogleSignIn.class);
+                    Intent intent = new Intent(LoginActivity.this, ProfileSetupActivity.class);
                     startActivity(intent);
                 }
             }
@@ -159,8 +171,47 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
             }
         });
+    }
 
+    private void check_user_type() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        DatabaseReference ref_user = FirebaseDatabase.getInstance().getReference()
+                .child("/user/" + currentUser.getUid() + "/type");
+        ref_user.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (!dataSnapshot.exists()) {
+                    //TODO: have error here
+                }
+                else {
+                    String user_type = (String) dataSnapshot.getValue();
+                    if (user_type.equals(LoginActivity.ADMIN)) {
+                        //is admin
+                        Intent intent = new Intent(LoginActivity.this, AdminActivity.class);
+                        startActivity(intent);
+                        finish();
+                    }
+                    else if (user_type.equals(LoginActivity.PROVIDER)) {
+                        //is provider
+                        //TODO: Go to provider activity
+                        Intent intent = new Intent(LoginActivity.this, ProviderActivity.class);
+                        startActivity(intent);
+                        finish();
+                    }
+                    else {
+                        //is customer
+                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                        startActivity(intent);
+                        finish();
+                    }
+                }
+            }
 
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 
     @Override
@@ -199,26 +250,46 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                             @Override
                             public void onComplete(@NonNull final Task<AuthResult> task) {
                                 if (task.isSuccessful()) {
-
-                                    //check email verify
-
                                     final FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-                                    if (!currentUser.isEmailVerified()) {
-                                        Snackbar.make(layout_login, R.string.email_not_verified, Snackbar.LENGTH_INDEFINITE)
-                                                .setAction(R.string.resend_verified, new View.OnClickListener() {
-                                                    @Override
-                                                    public void onClick(View v) {
-                                                        currentUser.sendEmailVerification();
-                                                    }
-                                                }).show();
-                                        return;
-                                    }
+                                    //check profile
+                                    DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
+                                    DatabaseReference ref_user = reference.child("/user/" + currentUser.getUid() + "/profile/");
 
-                                    Log.d(TAG, "onComplete: UID = " + FirebaseAuth.getInstance().getCurrentUser().getUid());
-                                    //go to main act
-                                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                                    startActivity(intent);
-                                    finish();
+                                    ref_user.addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot) {
+                                            if (dataSnapshot.exists()) {
+                                                //have profile
+                                                //check email verify
+                                                if (!currentUser.isEmailVerified()) {
+                                                    //email not verify
+                                                    Snackbar.make(layout_login, R.string.email_not_verified, Snackbar.LENGTH_INDEFINITE)
+                                                            .setAction(R.string.resend_verified, new View.OnClickListener() {
+                                                                @Override
+                                                                public void onClick(View v) {
+                                                                    currentUser.sendEmailVerification();
+                                                                }
+                                                            }).show();
+                                                }
+                                                else {
+                                                    //email is verify, go to main Activity
+                                                    Log.d(TAG, "onComplete: UID = " + FirebaseAuth.getInstance().getCurrentUser().getUid());
+                                                    //check user type
+                                                    check_user_type();
+                                                }
+                                            }
+                                            else {
+                                                //no profile was set, goto profile setup
+                                                Intent intent = new Intent(LoginActivity.this, ProfileSetupActivity.class);
+                                                startActivity(intent);
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+
+                                        }
+                                    });
                                 }
                                 else {
                                     Snackbar.make(layout_login, R.string.login_failed, Snackbar.LENGTH_INDEFINITE)

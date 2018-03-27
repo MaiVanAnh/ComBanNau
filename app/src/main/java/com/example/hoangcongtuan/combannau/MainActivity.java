@@ -2,10 +2,12 @@ package com.example.hoangcongtuan.combannau;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
@@ -15,8 +17,17 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuItem;
+import android.widget.ImageView;
+import android.widget.TextView;
 
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.ImageRequest;
+import com.example.hoangcongtuan.combannau.Utils.Common;
+import com.example.hoangcongtuan.combannau.Utils.Utils;
+import com.example.hoangcongtuan.combannau.services.GPSTracker;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
@@ -24,17 +35,43 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Iterator;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener,
         OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMyLocationClickListener{
 
     private final static int RC_LOCATION = 1;
+    private static final String TAG = MainActivity.class.getName();
 
     private GoogleMap googleMap;
     private GoogleSignInClient mGoogleSignInClient;
+    private TextView tvUserName;
+    private TextView tvEmail;
+    private LatLng current_latlng;
+//    private FirebaseFunctions mFunctions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,12 +91,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 .build();
         // Build a GoogleSignInClient with the options specified by gso.
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+
+//        mFunctions = FirebaseFunctions.getInstance();
     }
 
     private void initWidget() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
-        NavigationView navigationView = findViewById(R.id.navigation_view);
+        final NavigationView navigationView = findViewById(R.id.navigation_view);
+
+        tvUserName = navigationView.getHeaderView(0).findViewById(R.id.tvUserName);
+        tvEmail = navigationView.getHeaderView(0).findViewById(R.id.tvEmail);
 
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -73,20 +115,93 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         toggleButton.syncState();
 
         navigationView.setNavigationItemSelectedListener(this);
+
+        //get avatar
+        final FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        DatabaseReference ref_avatar_url = FirebaseDatabase.getInstance().getReference()
+                .child("/user/" + currentUser.getUid() + "/profile/avatar_url");
+        ref_avatar_url.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                String avatar_url = "";
+                if (dataSnapshot.exists())
+                    avatar_url = dataSnapshot.getValue().toString();
+                else if (currentUser.getPhotoUrl() != null)
+                    avatar_url = currentUser.getPhotoUrl().toString();
+                if (!avatar_url.isEmpty()) {
+                    ImageRequest avatarRequest = new ImageRequest(avatar_url,
+                            new Response.Listener<Bitmap>() {
+                                @Override
+                                public void onResponse(Bitmap response) {
+                                    ImageView imageView = (ImageView) navigationView.getHeaderView(0).findViewById(R.id.imgAvatar);
+                                    imageView.setImageBitmap(response);
+                                    Common.getInstance().setBmpAvatar(response);
+                                }
+                            },
+                            0, 0,
+                            ImageView.ScaleType.FIT_CENTER,
+                            Bitmap.Config.RGB_565,
+                            new Response.ErrorListener() {
+                                @Override
+                                public void onErrorResponse(VolleyError error) {
+                                    //todo: error here
+                                    Log.d(TAG, "onErrorResponse: error");
+                                }
+                            }
+                    );
+
+                    Utils.VolleyUtils.getsInstance(getApplicationContext()).getRequestQueue().add(avatarRequest);
+                }
+                else {
+                    ImageView imageView = (ImageView)navigationView.getHeaderView(0).findViewById(R.id.imgAvatar);
+                    imageView.setImageDrawable(getResources().getDrawable(R.drawable.avatar_circle_blue_512dp));
+                }
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+        DatabaseReference ref_user_name = FirebaseDatabase.getInstance().getReference()
+                .child("/user/" + currentUser.getUid() + "/profile/user_name");
+        ref_user_name.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    tvUserName.setText(dataSnapshot.getValue().toString());
+                }
+                else {
+                    //todo: error here
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+        tvEmail.setText(currentUser.getEmail());
+
+        Common.getInstance().setUserName(tvUserName.getText().toString());
+        Common.getInstance().setUser(FirebaseAuth.getInstance().getCurrentUser());
+
+
+
     }
 
     private void initMapFragment() {
-
         ((MapFragment)getFragmentManager().findFragmentById(R.id.map)).getMapAsync(this);
-
-
-
     }
 
     private void logout() {
         FirebaseAuth auth = FirebaseAuth.getInstance();
         auth.signOut();
         mGoogleSignInClient.signOut();
+
         Intent intent = new Intent(MainActivity.this, LoginActivity.class);
         startActivity(intent);
         finish();
@@ -100,6 +215,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             case R.id.item_dang_xuat:
                 logout();
                 break;
+            case R.id.item_functions:
+                //add_message_functions();
+                https_functions();
+                break;
+
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -107,19 +227,101 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         return true;
     }
 
+    private void https_functions() {
+        GetPostsTask get_https_json = new GetPostsTask();
+        get_https_json.execute("https://us-central1-combannau-1520822090740.cloudfunctions.net/getPosts");
+    }
+
+    private void show_provider(JSONObject json_posts) {
+        for(Iterator key = json_posts.keys(); key.hasNext();) {
+            try {
+                JSONObject post = (JSONObject) json_posts.get((String) key.next());
+                LatLng latLng = new LatLng(post.getDouble("latitude"), post.getDouble("longtitude"));
+                Marker marker = googleMap.addMarker(
+                        new MarkerOptions()
+                                .position(latLng)
+                                .title(post.getString("message"))
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_icon)));
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        Log.d(TAG, "show_provider: JSON_POSTS = " + json_posts.toString());
+    }
+
+    private class GetPostsTask extends AsyncTask<String, String, String> {
+
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+        }
+
+        protected String doInBackground(String... params) {
+
+
+            HttpURLConnection connection = null;
+            BufferedReader reader = null;
+
+            try {
+                URL url = new URL(params[0]);
+                connection = (HttpURLConnection) url.openConnection();
+                connection.connect();
+
+
+                InputStream stream = connection.getInputStream();
+
+                reader = new BufferedReader(new InputStreamReader(stream));
+
+                StringBuffer buffer = new StringBuffer();
+                String line = "";
+
+                while ((line = reader.readLine()) != null) {
+                    buffer.append(line+"\n");
+                    Log.d("Response: ", "> " + line);   //here u ll get whole response...... :-)
+
+                }
+
+                return buffer.toString();
+
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
+                try {
+                    if (reader != null) {
+                        reader.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            try {
+                JSONObject json_posts = new JSONObject(result);
+                show_provider(json_posts);
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
 
         this.googleMap = googleMap;
 
-        LatLng latLng = new LatLng(16, 107);
-//        googleMap.addMarker(new MarkerOptions()
-//                .position(latLng)
-//                .title("My Marker")
-//        );
-
-
-        googleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         googleMap.getUiSettings().setZoomControlsEnabled(true);
         googleMap.getUiSettings().setCompassEnabled(true);
         googleMap.getUiSettings().setMapToolbarEnabled(true);
@@ -148,6 +350,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         googleMap.setMyLocationEnabled(true);
         googleMap.getUiSettings().setMyLocationButtonEnabled(true);
+
+        GPSTracker gpsTracker = new GPSTracker(MainActivity.this);
+        if (gpsTracker.canGetLocation()) {
+            current_latlng = new LatLng(gpsTracker.getLatitude(), gpsTracker.getLongitude());
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(current_latlng, 15));
+        }
+        else {
+            gpsTracker.showSettingsAlert();
+        }
+        https_functions();
 
 
     }

@@ -9,4 +9,13 @@
     <color name="hyperLink">#4383fa</color>
 
     <color name="black_overlay">#66000000</color>
+    <color name="color_feed_user_name">#365899</color>
+    <color name="color_feed_time">#616770</color>
+
+    <color name="colorGray">#BDBDBD</color>
+    <color name="color_feed_background">#e9ebee</color>
+    <color name="color_post_background">#fff</color>
+    <color name="color_more_tint">#616372</color>
+    <color name="color_post_action">#626571</color>
+    <color name="marker_tint">#0e842a</color>
 </resources>
