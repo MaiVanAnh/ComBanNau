@@ -23,7 +23,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyDuEX0RlN7I65D4YIlcYd2ichDE83Jda3w" />
+            android:value="AIzaSyBWplIXc_Z4k2eeuUlYV7G2biQcEi-S9Wc" />
 
         <activity
             android:name=".LoginActivity"
@@ -34,6 +34,7 @@
         <activity android:name=".SplashActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.VIEW"/>
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>

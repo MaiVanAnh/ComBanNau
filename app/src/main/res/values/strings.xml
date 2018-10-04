@@ -62,4 +62,5 @@
     <string name="you_must_enter_content">Bạn phải nhập nội dung bài viết</string>
     <string name="you_must_enter_place">Bạn phải chọn địa điểm</string>
     <string name="user_phone">Phone number</string>
+    <string name="getUrl_failer">Có lỗi khi lấy url file</string>
 </resources>

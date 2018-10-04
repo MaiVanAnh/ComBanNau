@@ -18,6 +18,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RadioGroup;
+import android.widget.Toast;
 
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -118,15 +119,26 @@ public class ProfileSetupActivity extends AppCompatActivity implements View.OnCl
 
     private void upload_avatar(final Uri uri) {
         final FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        StorageReference ref = FirebaseStorage.getInstance().getReference()
+        final StorageReference ref = FirebaseStorage.getInstance().getReference()
                 .child(currentUser.getUid() + "/avatar/" + uri.getLastPathSegment());
         ref.putFile(uri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
-            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+            public void onSuccess(final UploadTask.TaskSnapshot taskSnapshot) {
                 //save image url to profile
-                DatabaseReference ref_profile = FirebaseDatabase.getInstance().getReference()
+                final DatabaseReference ref_profile = FirebaseDatabase.getInstance().getReference()
                         .child("user/" + currentUser.getUid() + "/profile");
-                ref_profile.child("avatar_url").setValue(taskSnapshot.getDownloadUrl().toString());
+                ref.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                    @Override
+                    public void onSuccess(Uri uri) {
+                        ref_profile.child("avatar_url").setValue(uri.toString());
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(ProfileSetupActivity.this, R.string.getUrl_failer, Toast.LENGTH_SHORT).show();
+                    }
+                });
 
                 //show image avatar
                 try {
@@ -176,9 +188,7 @@ public class ProfileSetupActivity extends AppCompatActivity implements View.OnCl
                         });
             }
         });
-
     }
-
 
     private void init() {
 

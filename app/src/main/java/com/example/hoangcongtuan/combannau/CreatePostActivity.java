@@ -15,6 +15,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.hoangcongtuan.combannau.models.PostObj;
 import com.google.android.gms.maps.model.LatLng;
@@ -127,26 +128,38 @@ public class CreatePostActivity extends AppCompatActivity {
                     .child("/user/" + currentUser.getUid() + "/post/");
 
             if (uri_image != null) {
-                StorageReference ref_storage = FirebaseStorage.getInstance().getReference()
+                final StorageReference ref_storage = FirebaseStorage.getInstance().getReference()
                         .child(currentUser.getUid() + "/post/" + uri_image.getLastPathSegment());
                 ref_storage.putFile(uri_image).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                     @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        PostObj postObj = new PostObj(content, taskSnapshot.getDownloadUrl().toString(),
-                                "vietnam", "0vnd", strTime, 5, 5,
-                                (float)latLng.latitude, (float)latLng.longitude, place);
-                        String key = ref_database.push().getKey();
-                        ref_database.child(key).setValue(postObj).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    public void onSuccess(final UploadTask.TaskSnapshot taskSnapshot) {
+
+                        ref_storage.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
                             @Override
-                            public void onComplete(@NonNull Task<Void> task) {
-                                if (task.isSuccessful())
-                                    finish_post(true);
-                                else
-                                    finish_post(false);
-                                //TODO: upload failed
+                            public void onSuccess(Uri uri) {
+                                PostObj postObj = new PostObj(content, uri.toString().toString(),
+                                        "vietnam", "0vnd", strTime, 5, 5,
+                                        (float)latLng.latitude, (float)latLng.longitude, place);
+
+                                String key = ref_database.push().getKey();
+                                ref_database.child(key).setValue(postObj).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Void> task) {
+                                        if (task.isSuccessful())
+                                            finish_post(true);
+                                        else
+                                            finish_post(false);
+                                        //TODO: upload failed
+                                    }
+                                });
+                            }
+                        })
+                        .addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Toast.makeText(CreatePostActivity.this, R.string.getUrl_failer, Toast.LENGTH_SHORT).show();
                             }
                         });
-
                     }
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
