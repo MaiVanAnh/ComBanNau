@@ -300,7 +300,7 @@ public class ProviderActivity extends AppCompatActivity implements NavigationVie
         switch (requestCode) {
             case RC_CREATE_POST:
                 if (resultCode == RESULT_OK) {
-                    postFragment.update_new_post();
+                    //postFragment.update_new_post();
                 }
                 break;
             case CreateDishActivity.RC_PICK_IMAGE:

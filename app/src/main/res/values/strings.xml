@@ -94,4 +94,5 @@
     <string name="create_menu_menuNumber">Tổng: 3</string>
     <string name="finish">Hoàn tát</string>
     <string name="cancel">Cancel</string>
+    <string name="remove_menu">Remove menu</string>
 </resources>

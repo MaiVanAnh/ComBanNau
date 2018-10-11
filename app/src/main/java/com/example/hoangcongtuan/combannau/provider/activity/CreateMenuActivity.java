@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -22,10 +23,12 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.example.hoangcongtuan.combannau.BuildConfig;
 import com.example.hoangcongtuan.combannau.R;
 import com.example.hoangcongtuan.combannau.Utils.AppUserManager;
 import com.example.hoangcongtuan.combannau.Utils.Constants;
 import com.example.hoangcongtuan.combannau.Utils.GraphicsUtils;
+import com.example.hoangcongtuan.combannau.Utils.Utils;
 import com.example.hoangcongtuan.combannau.models.Dish;
 import com.example.hoangcongtuan.combannau.models.DishObj;
 import com.example.hoangcongtuan.combannau.models.Menu;
@@ -40,7 +43,11 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -82,6 +89,7 @@ public class CreateMenuActivity extends AppCompatActivity {
     Menu.Builder menuBuilder;
     MenuAdapter adapter;
     int [] uploadState;
+    String MAP_API_KEY = "AIzaSyBWplIXc_Z4k2eeuUlYV7G2biQcEi-S9Wc";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,6 +101,9 @@ public class CreateMenuActivity extends AppCompatActivity {
 
     private void init() {
         strAddress = AppUserManager.getInstance().getCurrentUser().address;
+        GeoCoding geoCoding = new GeoCoding();
+        geoCoding.execute(strAddress);
+
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.HOUR, 2);
         SimpleDateFormat sdf = new SimpleDateFormat("EEEE dd/MM/yyyy hh:mm a", Locale.getDefault());
@@ -137,6 +148,42 @@ public class CreateMenuActivity extends AppCompatActivity {
             }
         });
     }
+
+    class GeoCoding extends AsyncTask<String, Void, String> {
+//        String urlForm =
+        @Override
+        protected String doInBackground(String... strings) {
+            String address = strings[0];
+            String url = String.format("https://maps.googleapis.com/maps/api/geocode/json?address=%s&key=%s", address, MAP_API_KEY);
+            String strJSon = "";
+            try {
+                strJSon = Utils.getJSONObjectFromURL(url);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return strJSon;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            try {
+                JSONObject jsonGeo = new JSONObject(s);
+                JSONObject jsonLatLng = jsonGeo.getJSONArray("results").getJSONObject(0)
+                        .getJSONObject("geometry").getJSONObject("location");
+                float lat = (float) jsonLatLng.getDouble("lat");
+                float lng = (float) jsonLatLng.getDouble("lng");
+
+                latLngAddress = new LatLng(lat, lng);
+                Log.d(TAG, "onPostExecute: " + latLngAddress.toString());
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
+
 
     private void showPickEndTimeDialog() {
         Calendar currentCalendar = Calendar.getInstance();
@@ -206,25 +253,41 @@ public class CreateMenuActivity extends AppCompatActivity {
         return true;
     }
 
+    private void startUploadMenu() {
+        Calendar currentCalendar = Calendar.getInstance();
+        SimpleDateFormat sdfUS = new SimpleDateFormat("EEEE dd/MM/yyyy hh:mm a", Locale.US);
+        String strcCurrentTime = sdfUS.format(currentCalendar.getTime());
+        menuBuilder.setAddress(tvAddress.getText().toString())
+                .setEndTime(strEndTimeUS)
+                .setStartTime(strcCurrentTime)
+                .setLatitude((float) latLngAddress.latitude)
+                .setLongtitude((float) latLngAddress.longitude)
+                .setName(edtName.getText().toString());
+
+        final DatabaseReference ref_menu = FirebaseDatabase.getInstance().getReference().child("menu");
+        String key = ref_menu.push().getKey();
+
+        uploadImage(key);
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.item_finish:
                 // TODO: 10/7/18 Finish action
-                uploadImage();
+                startUploadMenu();
                 break;
         }
         return true;
     }
 
-    private void uploadImage() {
+    private void uploadImage(final String strKey) {
         menu = menuBuilder.build();
         uploadState = new int[menu.items.size()];
         Arrays.fill(uploadState, STATE_UPLOADING);
 
-
         final StorageReference ref_storage = FirebaseStorage.getInstance().getReference()
-                .child(AppUserManager.getInstance().getUid()).child("/post/");
+                .child(AppUserManager.getInstance().getUid()).child("/post/").child(strKey);
 
         for(int i = 0; i < menu.items.size(); i++) {
             DishObj obj = menu.items.get(i);
@@ -233,7 +296,7 @@ public class CreateMenuActivity extends AppCompatActivity {
                 // TODO: 10/9/18 Handle Error
                 uploadState[i] = STATE_UPLOAD_FAILED;
             } else {
-                final int finalI = 0;
+                final int finalI = i;
                 final String fileName = "Image " + i;
                 ref_storage.child(fileName).putFile(uri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                     int tmp_i = finalI;
@@ -245,13 +308,13 @@ public class CreateMenuActivity extends AppCompatActivity {
                             public void onSuccess(Uri uri) {
                                 menu.items.get(tmp_i).imageUrl = uri.toString();
                                 uploadState[tmp_i] = STATE_UPLOAD_SUCCESS;
-                                checkUploadFinish();
+                                checkUploadFinish(strKey);
                             }
                         }).addOnFailureListener(new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
                                 uploadState[tmp_i] = STATE_UPLOAD_FAILED;
-                                checkUploadFinish();
+                                checkUploadFinish(strKey);
                             }
                         });
                     }
@@ -260,14 +323,14 @@ public class CreateMenuActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         uploadState[tmp_i] = STATE_UPLOAD_FAILED;
-                        checkUploadFinish();
+                        checkUploadFinish(strKey);
                     }
                 });
             }
         }
     }
 
-    private void checkUploadFinish() {
+    private void checkUploadFinish(String strKey) {
         for(int i = 0; i < uploadState.length; i++) {
             if (uploadState[i] == STATE_UPLOADING)
                 return;
@@ -280,25 +343,24 @@ public class CreateMenuActivity extends AppCompatActivity {
                 return;
             }
         }
-        uploadMenu();
+
+        uploadMenu(strKey);
     }
 
     private void showErrorWhenUpload() {
         Toast.makeText(CreateMenuActivity.this, R.string.menu_upload_failed, Toast.LENGTH_SHORT).show();
     }
 
-    private void uploadMenu() {
+    private void uploadMenu(final String strKey) {
         final DatabaseReference ref_menu = FirebaseDatabase.getInstance().getReference().child("menu");
         final DatabaseReference ref_owner_menu = FirebaseDatabase.getInstance().getReference().child("user")
                 .child(AppUserManager.getInstance().getUid()).child("menu");
 
-        final String key = ref_menu.push().getKey();
-        ref_menu.child(key).setValue(menu).addOnSuccessListener(new OnSuccessListener<Void>() {
+        ref_menu.child(strKey).setValue(menu).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
-//                ref_owner_menu.getT
                 // TODO: 10/9/18 Keep order when push new value, top is newest
-                ref_owner_menu.child(key).setValue(key);
+                ref_owner_menu.child(strKey).setValue(strKey);
                 Toast.makeText(CreateMenuActivity.this, R.string.menu_uploaded, Toast.LENGTH_SHORT).show();
             }
         }).addOnFailureListener(new OnFailureListener() {

@@ -11,9 +11,17 @@ import android.net.Uri;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
+import java.net.URL;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -88,5 +96,30 @@ public class Utils {
         if (bitmap == null)
             throw new FileNotFoundException(path + " not found!");
         return bitmap;
+    }
+
+    public static String getJSONObjectFromURL(String urlString) throws IOException, JSONException {
+        HttpURLConnection urlConnection = null;
+        URL url = new URL(urlString);
+        urlConnection = (HttpURLConnection) url.openConnection();
+        urlConnection.setRequestMethod("GET");
+        urlConnection.setReadTimeout(10000 /* milliseconds */ );
+        urlConnection.setConnectTimeout(15000 /* milliseconds */ );
+        urlConnection.setDoOutput(true);
+        urlConnection.connect();
+
+        BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()));
+        StringBuilder sb = new StringBuilder();
+
+        String line;
+        while ((line = br.readLine()) != null) {
+            sb.append(line + "\n");
+        }
+        br.close();
+
+        String jsonString = sb.toString();
+        System.out.println("JSON: " + jsonString);
+
+        return jsonString;
     }
 }

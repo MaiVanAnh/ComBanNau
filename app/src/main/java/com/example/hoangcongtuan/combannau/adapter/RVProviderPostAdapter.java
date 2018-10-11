@@ -8,12 +8,17 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.hoangcongtuan.combannau.R;
 import com.example.hoangcongtuan.combannau.Utils.Common;
+import com.example.hoangcongtuan.combannau.models.Menu;
 import com.example.hoangcongtuan.combannau.models.Post;
 
 import java.util.ArrayList;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 /**
  * Created by hoangcongtuan on 3/23/18.
@@ -22,7 +27,7 @@ import java.util.ArrayList;
 public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private final static String TAG = RVProviderPostAdapter.class.getName();
-    private ArrayList<Post> posts;
+    private ArrayList<Menu> menus;
     private Context mContext;
 
     private LinearLayoutManager linearLayoutManager;
@@ -33,7 +38,7 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
 
     public RVProviderPostAdapter(final RecyclerView recyclerView, Context context) {
-        posts = new ArrayList<>();
+        menus = new ArrayList<>();
         linearLayoutManager = (LinearLayoutManager)recyclerView.getLayoutManager();
         this.mContext = context;
 
@@ -41,30 +46,41 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
     //hold view cho moi item da load trong recycle view
     public class PostHolder extends RecyclerView.ViewHolder {
-        TextView tvUserName, tvTime, tvContent;
-        ImageView imageView, imgAvatar;
+        @BindView(R.id.tvTitle)
+        TextView tvTitle;
+        @BindView(R.id.tvStartTime)
+        TextView tvStartTime;
+        @BindView(R.id.tvEndTime)
+        TextView tvEndTime;
+        @BindView(R.id.tvAddress)
+        TextView tvAddress;
+        @BindView(R.id.imgRemove)
+        ImageView imgRemove;
 
         public PostHolder(View itemView) {
             super(itemView);
-
-            tvUserName =itemView.findViewById(R.id.tvUserName);
-            tvTime = itemView.findViewById(R.id.tvTime);
-            tvContent = itemView.findViewById(R.id.tvContent);
-
-            imageView = itemView.findViewById(R.id.imageView);
-            imgAvatar = itemView.findViewById(R.id.imgAvatar);
-
+            ButterKnife.bind(this, itemView);
+            initWidget();
         }
+
+        private void initWidget() {
+            imgRemove.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Toast.makeText(getContext(), R.string.remove_menu, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+
     }
 
     //holder view cho item dang load trong recycle view
     public class PostHolderLoading extends RecyclerView.ViewHolder {
-
         public PostHolderLoading(View itemView) {
             super(itemView);
         }
     }
-
 
     //luc tao item cho recycleview, phu thuoc vao viewType
     @Override
@@ -77,7 +93,7 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
                 return new PostHolderLoading(itemView);
             case ITEM_LOADED:
                 //item da load
-                itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_post, parent, false);
+                itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_menu_overview, parent, false);
                 return new PostHolder(itemView);
         }
         return null;
@@ -88,22 +104,14 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
         if (holder instanceof PostHolder) {
             PostHolder postHolder = (PostHolder) holder;
-            postHolder.tvUserName.setText(Common.getInstance().getUserName());
-            postHolder.imgAvatar.setImageBitmap(Common.getInstance().getBmpAvatar());
+            Menu menu = menus.get(position);
 
-
-
-            postHolder.tvTime.setText(posts.get(position).getTillNow());
-            postHolder.tvContent.setText(posts.get(position).getDescription());
-            postHolder.imageView.setImageBitmap(posts.get(position).getImgBitmap());
-
-            if (posts.get(position).getImageUrl().isEmpty()) {
-                postHolder.imageView.setVisibility(View.GONE);
-            }
-
+            postHolder.tvTitle.setText(menu.name);
+            postHolder.tvAddress.setText(menu.address);
+            postHolder.tvEndTime.setText(menu.endTime);
+            postHolder.tvStartTime.setText(menu.startTime);
         }
     }
-
 
     public Context getContext() {
         return mContext;
@@ -115,7 +123,7 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
     @Override
     public int getItemCount() {
-        return posts.size();
+        return menus.size();
     }
     //interface dung de call back moi khi load them thong bao
     public interface ILoadMoreCallBack {
@@ -126,19 +134,19 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     //tra ve trang thai cua thong bao, tu do xac dinh dung viewholder nao
     @Override
     public int getItemViewType(int position) {
-        return posts.get(position) == null ? ITEM_LOADING : ITEM_LOADED;
+        return menus.get(position) == null ? ITEM_LOADING : ITEM_LOADED;
     }
 
-    public ArrayList<Post> getPosts() {
-        return posts;
+    public ArrayList<Menu> getPosts() {
+        return menus;
     }
 
-    public void addPost(Post feed) {
-        posts.add(feed);
+    public void addPost(Menu menu) {
+        menus.add(menu);
     }
 
-    public void insertPost(int position, Post feed) {
-        posts.add(position, feed);
+    public void insertPost(int position, Menu menu) {
+        menus.add(position, menu);
         this.notifyItemInserted(position);
     }
 }
