@@ -93,11 +93,11 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
 
 
-            postHolder.tvTime.setText(posts.get(position).getTill_now());
-            postHolder.tvContent.setText(posts.get(position).getMessage());
-            postHolder.imageView.setImageBitmap(posts.get(position).getBitmap());
+            postHolder.tvTime.setText(posts.get(position).getTillNow());
+            postHolder.tvContent.setText(posts.get(position).getDescription());
+            postHolder.imageView.setImageBitmap(posts.get(position).getImgBitmap());
 
-            if (posts.get(position).getImage_url().isEmpty()) {
+            if (posts.get(position).getImageUrl().isEmpty()) {
                 postHolder.imageView.setVisibility(View.GONE);
             }
 

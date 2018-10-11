@@ -1,7 +1,10 @@
-package com.example.hoangcongtuan.combannau;
+package com.example.hoangcongtuan.combannau.provider.activity;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -17,18 +20,27 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.ImageRequest;
+import com.example.hoangcongtuan.combannau.LoginActivity;
+import com.example.hoangcongtuan.combannau.R;
 import com.example.hoangcongtuan.combannau.Utils.Common;
 import com.example.hoangcongtuan.combannau.Utils.Utils;
 import com.example.hoangcongtuan.combannau.adapter.ProviderPagerAdapter;
-import com.example.hoangcongtuan.combannau.fragment.BookFragment;
-import com.example.hoangcongtuan.combannau.fragment.ProviderPostFragment;
+import com.example.hoangcongtuan.combannau.models.DishObj;
+import com.example.hoangcongtuan.combannau.models.Menu;
+import com.example.hoangcongtuan.combannau.provider.fragment.BookFragment;
+import com.example.hoangcongtuan.combannau.provider.fragment.ProviderPostFragment;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -36,6 +48,12 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 
 public class ProviderActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
     private static final String TAG = ProviderActivity.class.getName().toString();
@@ -56,12 +74,75 @@ public class ProviderActivity extends AppCompatActivity implements NavigationVie
         init();
         initWidget();
 
-        doSomeThing();
+//        doSomeThing();
+//        doSomeThing2();
+//        chose_image();
     }
 
     private void doSomeThing() {
-//        Intent intent = new Intent(ProviderActivity.this, PickLocation.class);
-//        startActivity(intent);
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+        DatabaseReference ref_list = ref.child("list");
+        Menu.Builder builder = new Menu.Builder("Thu don ngay 6/10");
+        builder.setStartTime("Start time");
+        builder.setEndTime("end time");
+        builder.setAddress("Adresss");
+        for(int i = 0; i < 5; i++) {
+            DishObj.Builder dishBuilder = new DishObj.Builder("Mon an " + i);
+            dishBuilder.setDescription("Des for " + i)
+                    .setImageUrl("img url here " + i)
+                    .setKeyWords("key word " + i)
+                    .setPrice(i)
+                    .setRegion("region " + i)
+                    .setRest(i)
+                    .setTotal(i);
+
+            builder.addItem(dishBuilder.build());
+        }
+        String key = ref.push().getKey();
+        ref_list.child(key).setValue(builder.build());
+    }
+
+    private void chose_image() {
+        Intent galleryIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(Intent.createChooser(galleryIntent,"Chọn hình ảnh từ thư viện"), CreateDishActivity.RC_PICK_IMAGE);
+    }
+
+    private void doSomeThing2() {
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+        DatabaseReference ref_list = ref.child("list");
+        ref_list.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    for(DataSnapshot snapshot: dataSnapshot.getChildren()) {
+                        Menu menu = snapshot.getValue(Menu.class);
+                        Log.d(TAG, "onDataChange: " + menu.toString());
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    public void uploadMenu(DatabaseReference ref_menu, final DatabaseReference ref_ownerMenu, Menu menu) {
+        final String key = ref_menu.push().getKey();
+        ref_menu.setValue(menu).addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        ref_ownerMenu.push().setValue(key);
+                        Toast.makeText(ProviderActivity.this, R.string.menu_uploaded, Toast.LENGTH_SHORT).show();
+                    }
+        })
+        .addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(ProviderActivity.this, R.string.menu_upload_failed, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void initWidget() {
@@ -176,7 +257,7 @@ public class ProviderActivity extends AppCompatActivity implements NavigationVie
         fab_new_post.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(ProviderActivity.this, CreatePostActivity.class);
+                Intent intent = new Intent(ProviderActivity.this, CreateMenuActivity.class);
                 startActivityForResult(intent, RC_CREATE_POST);
             }
         });
@@ -222,6 +303,42 @@ public class ProviderActivity extends AppCompatActivity implements NavigationVie
                     postFragment.update_new_post();
                 }
                 break;
+            case CreateDishActivity.RC_PICK_IMAGE:
+                if (resultCode == RESULT_OK) {
+                    if (data != null) {
+                        Uri uri = data.getData();
+                        String strUri = uri.toString();
+                        Uri uri2 = Uri.parse(strUri);
+                        uploadImage(uri2);
+                    }
+                }
+                break;
         }
+    }
+
+    private void uploadImage(final Uri uri) {
+        final StorageReference ref = FirebaseStorage.getInstance().getReference("images");
+        ref.child(uri.getLastPathSegment()).putFile(uri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                ref.child(uri.getLastPathSegment()).getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                    @Override
+                    public void onSuccess(Uri uri) {
+                        Log.d(TAG, "onSuccess: Download url = " + uri.toString());
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.d(TAG, "onFailure: get Download Url Failed");
+                    }
+                });
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.d(TAG, "onFailure: Upload Failed");
+            }
+        });
+
     }
 }

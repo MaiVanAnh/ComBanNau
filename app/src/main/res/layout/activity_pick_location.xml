@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:id="@+id/layout_pick_location"
-    tools:context="com.example.hoangcongtuan.combannau.PickLocation">
+    tools:context="com.example.hoangcongtuan.combannau.provider.activity.PickLocation">
 
     <FrameLayout
         android:layout_width="match_parent"

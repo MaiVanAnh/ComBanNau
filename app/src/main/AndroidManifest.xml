@@ -18,7 +18,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".MainActivity"
+            android:name=".customer.activity.MainActivity"
             android:theme="@style/AppTheme.NoActionBar" />
 
         <meta-data
@@ -34,7 +34,7 @@
         <activity android:name=".SplashActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <action android:name="android.intent.action.VIEW"/>
+                <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
@@ -48,11 +48,16 @@
             android:name="com.theartofdev.edmodo.cropper.CropImageActivity"
             android:theme="@style/Base.Theme.AppCompat" />
         <activity
-            android:name=".ProviderActivity"
+            android:name=".provider.activity.ProviderActivity"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity android:name=".CreatePostActivity" />
-        <activity android:name=".PickLocation"
+        <activity android:name=".provider.activity.CreateDishActivity" />
+        <activity
+            android:name=".provider.activity.PickLocation"
             android:theme="@style/AppTheme.NoActionBar">
+
+        </activity>
+
+        <activity android:name=".provider.activity.CreateMenuActivity">
 
         </activity>
     </application>

@@ -23,7 +23,12 @@ import android.widget.Toast;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.ImageRequest;
+import com.example.hoangcongtuan.combannau.Utils.AppUserManager;
 import com.example.hoangcongtuan.combannau.Utils.Utils;
+import com.example.hoangcongtuan.combannau.customer.activity.MainActivity;
+import com.example.hoangcongtuan.combannau.models.User;
+import com.example.hoangcongtuan.combannau.models.UserObj;
+import com.example.hoangcongtuan.combannau.provider.activity.ProviderActivity;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -101,7 +106,6 @@ public class ProfileSetupActivity extends AppCompatActivity implements View.OnCl
         }
         else
             imgAvatar.setImageDrawable(getResources().getDrawable(R.drawable.avatar_circle_blue_512dp));
-
 
         imgAvatar.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -212,7 +216,21 @@ public class ProfileSetupActivity extends AppCompatActivity implements View.OnCl
         //goto main actiivy
         //check user type
 
-        check_user_type();
+        ref_profile.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                UserObj userObj = dataSnapshot.getValue(UserObj.class);
+                User user = new User(userObj);
+                String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                AppUserManager.getInstance().setCurrentUser(user, uid);
+                check_user_type();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
 

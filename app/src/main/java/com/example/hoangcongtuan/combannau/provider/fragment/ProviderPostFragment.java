@@ -1,4 +1,4 @@
-package com.example.hoangcongtuan.combannau.fragment;
+package com.example.hoangcongtuan.combannau.provider.fragment;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
@@ -99,15 +99,17 @@ public class ProviderPostFragment extends Fragment {
                         final Calendar calendar = Calendar.getInstance();
                         try {
                             calendar.setTime(
-                                    sdf.parse(postObj.getTime())
+                                    sdf.parse(postObj.getPostTime())
                             );
                         } catch (ParseException e) {
                             e.printStackTrace();
                         }
 
-                        final Post post = new Post(post_snapshot.getKey(), postObj.getMessage(), null, postObj.getImageUrl(),
-                                postObj.getRegion(), postObj.getPrice(), calendar, postObj.getTotal()
-                                , postObj.getEs(), (float) postObj.latitude, (float) postObj.longtitude, postObj.place);
+
+                        final Post post = new Post(postObj, null, calendar.getTime(), null);
+//                        final Post post = new Post(post_snapshot.getKey(), postObj.getMessage(), null, postObj.getImageUrl(),
+//                                postObj.getRegion(), postObj.getPrice(), calendar, postObj.getTotal()
+//                                , postObj.getEs(), (float) postObj.latitude, (float) postObj.longtitude, postObj.place);
 
                         //calculate till_now
                         long diffMs = Calendar.getInstance().getTimeInMillis() - calendar.getTimeInMillis();
@@ -116,17 +118,17 @@ public class ProviderPostFragment extends Fragment {
                         long hour = diffSec / (60 * 60);
                         String till_now = null;
                         if (hour >= 24) {
-                            till_now = postObj.getTime();
+                            till_now = postObj.getPostTime();
                         }
                         else if (hour >= 1)
-                            till_now = hour + " giờ" + MID_DOT + post.getPlace();
+                            till_now = hour + " giờ" + MID_DOT + post.getAddress();
                         else if (minute >= 1)
-                            till_now = minute + " phút"+ MID_DOT + post.getPlace();
+                            till_now = minute + " phút"+ MID_DOT + post.getAddress();
                         else
-                            till_now = diffSec + " giây"+ MID_DOT + post.getPlace();
+                            till_now = diffSec + " giây"+ MID_DOT + post.getAddress();
 
 
-                        post.setTill_now(till_now);
+                        post.setTillNow(till_now);
 
                         if (!postObj.getImageUrl().isEmpty()) {
                             ImageRequest avatarRequest = new ImageRequest(postObj.getImageUrl(),
@@ -134,7 +136,7 @@ public class ProviderPostFragment extends Fragment {
                                         @Override
                                         public void onResponse(Bitmap response) {
                                             adapter.notifyDataSetChanged();
-                                            post.setBitmap(response);
+                                            post.setImgBitmap(response);
 
                                             adapter.notifyItemChanged(adapter.getPosts().indexOf(post));
 
@@ -191,15 +193,17 @@ public class ProviderPostFragment extends Fragment {
                         final Calendar calendar = Calendar.getInstance();
                         try {
                             calendar.setTime(
-                                    sdf.parse(postObj.getTime())
+                                    sdf.parse(postObj.getPostTime())
                             );
                         } catch (ParseException e) {
                             e.printStackTrace();
                         }
 
-                        final Post post = new Post(snapshot.getKey(), postObj.getMessage(),
-                                null, postObj.getImageUrl(), postObj.getRegion(), postObj.getPrice(),
-                                calendar, postObj.getTotal(), postObj.getEs(), postObj.latitude, postObj.longtitude, postObj.place);
+                        final Post post = new Post(postObj, null, calendar.getTime(), null);
+
+//                        final Post post = new Post(snapshot.getKey(), postObj.getMessage(),
+//                                null, postObj.getImageUrl(), postObj.getRegion(), postObj.getPrice(),
+//                                calendar, postObj.getTotal(), postObj.getEs(), postObj.latitude, postObj.longtitude, postObj.place);
 
                         //calculate till_now
                         long diffMs = Calendar.getInstance().getTimeInMillis() - calendar.getTimeInMillis();
@@ -208,24 +212,24 @@ public class ProviderPostFragment extends Fragment {
                         long hour = diffSec / (60 * 60);
                         String till_now = null;
                         if (hour >= 24) {
-                            till_now = postObj.getTime();
+                            till_now = postObj.getPostTime();
                         }
                         else if (hour >= 1)
-                            till_now = hour + " giờ" + MID_DOT + post.getPlace();
+                            till_now = hour + " giờ" + MID_DOT + post.getAddress();
                         else if (minute >= 1)
-                            till_now = minute + " phút" + MID_DOT + post.getPlace();
+                            till_now = minute + " phút" + MID_DOT + post.getAddress();
                         else
-                            till_now = diffSec + " giây" + MID_DOT + post.getPlace();
+                            till_now = diffSec + " giây" + MID_DOT + post.getAddress();
 
 
-                        post.setTill_now(till_now);
+                        post.setTillNow(till_now);
 
                         if (!postObj.getImageUrl().isEmpty()) {
                             ImageRequest avatarRequest = new ImageRequest(postObj.getImageUrl(),
                                     new Response.Listener<Bitmap>() {
                                         @Override
                                         public void onResponse(Bitmap response) {
-                                            post.setBitmap(response);
+                                            post.setImgBitmap(response);
                                             adapter.notifyItemChanged(0);
                                         }
                                     },

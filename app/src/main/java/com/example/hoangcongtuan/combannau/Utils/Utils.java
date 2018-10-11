@@ -1,13 +1,21 @@
 package com.example.hoangcongtuan.combannau.Utils;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.ThumbnailUtils;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.Volley;
 
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.net.InetAddress;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * Created by hoangcongtuan on 3/21/18.
@@ -73,5 +81,12 @@ public class Utils {
             }
 
         }
+    }
+
+    public static Bitmap getThumbnails(String path, int width, int height) throws FileNotFoundException {
+        Bitmap bitmap = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeFile(path), width, height);
+        if (bitmap == null)
+            throw new FileNotFoundException(path + " not found!");
+        return bitmap;
     }
 }

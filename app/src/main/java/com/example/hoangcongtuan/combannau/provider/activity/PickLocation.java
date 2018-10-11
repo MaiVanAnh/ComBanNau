@@ -1,11 +1,9 @@
-package com.example.hoangcongtuan.combannau;
+package com.example.hoangcongtuan.combannau.provider.activity;
 
-import android.*;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Camera;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.support.design.widget.CoordinatorLayout;
@@ -13,11 +11,11 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.RelativeLayout;
 
+import com.example.hoangcongtuan.combannau.R;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Status;
@@ -31,7 +29,6 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -39,6 +36,7 @@ public class PickLocation extends AppCompatActivity  implements GoogleApiClient.
         OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMyLocationClickListener{
 
     private static final String TAG = PickLocation.class.getName();
+    public final static int RC_PICK_LOCATION = 1;
     public static final String KEY_LAT = "LATTIUDE";
     public static final String KEY_LONG = "LONGTITUDE";
     public static final String KEY_PLACE = "PLACE";
@@ -56,7 +54,7 @@ public class PickLocation extends AppCompatActivity  implements GoogleApiClient.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_pick_location);
+        setContentView(com.example.hoangcongtuan.combannau.R.layout.activity_pick_location);
 
         init();
         initWidget();
@@ -66,9 +64,9 @@ public class PickLocation extends AppCompatActivity  implements GoogleApiClient.
     private void initWidget() {
 
         PlaceAutocompleteFragment autocompleteFragment = (PlaceAutocompleteFragment)
-                getFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
+                getFragmentManager().findFragmentById(com.example.hoangcongtuan.combannau.R.id.place_autocomplete_fragment);
 
-        layout_pick_location = findViewById(R.id.layout_pick_location);
+        layout_pick_location = findViewById(com.example.hoangcongtuan.combannau.R.id.layout_pick_location);
 
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
@@ -80,8 +78,8 @@ public class PickLocation extends AppCompatActivity  implements GoogleApiClient.
                     pick_marker.remove();
                 pick_marker = googleMap.addMarker(new MarkerOptions().position(place.getLatLng()));
                 googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 15));
-                Snackbar.make(layout_pick_location, R.string.is_your_location, Snackbar.LENGTH_INDEFINITE)
-                        .setAction(R.string.ok, new View.OnClickListener() {
+                Snackbar.make(layout_pick_location, com.example.hoangcongtuan.combannau.R.string.is_your_location, Snackbar.LENGTH_INDEFINITE)
+                        .setAction(com.example.hoangcongtuan.combannau.R.string.ok, new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
                                 return_pick_location(place);
@@ -119,7 +117,7 @@ public class PickLocation extends AppCompatActivity  implements GoogleApiClient.
     }
 
     private void initMapFragment() {
-        ((MapFragment)getFragmentManager().findFragmentById(R.id.map)).getMapAsync(this);
+        ((MapFragment)getFragmentManager().findFragmentById(com.example.hoangcongtuan.combannau.R.id.map)).getMapAsync(this);
     }
 
     @Override

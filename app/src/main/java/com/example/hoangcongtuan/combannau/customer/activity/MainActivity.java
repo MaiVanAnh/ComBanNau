@@ -1,11 +1,10 @@
-package com.example.hoangcongtuan.combannau;
+package com.example.hoangcongtuan.combannau.customer.activity;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
@@ -25,6 +24,8 @@ import android.widget.TextView;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.ImageRequest;
+import com.example.hoangcongtuan.combannau.LoginActivity;
+import com.example.hoangcongtuan.combannau.R;
 import com.example.hoangcongtuan.combannau.Utils.Common;
 import com.example.hoangcongtuan.combannau.Utils.Utils;
 import com.example.hoangcongtuan.combannau.services.GPSTracker;
@@ -47,7 +48,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
