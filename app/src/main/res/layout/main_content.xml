@@ -14,4 +14,6 @@
         <include layout="@layout/layout_content" />
     </LinearLayout>
 
+    <include layout="@layout/layout_bottom_sheet_menu"/>
+
 </android.support.design.widget.CoordinatorLayout>

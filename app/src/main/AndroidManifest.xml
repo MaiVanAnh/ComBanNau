@@ -41,7 +41,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".RequestVerifyActivity" />
-        <activity android:name=".common.ProfileSetupActivity" />
+        <activity android:name=".ProfileSetupActivity" />
         <activity
             android:name=".AdminActivity"
             android:theme="@style/AppTheme.NoActionBar" />

@@ -6,9 +6,11 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
+import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
@@ -17,11 +19,17 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -29,9 +37,16 @@ import com.android.volley.toolbox.ImageRequest;
 import com.example.hoangcongtuan.combannau.LoginActivity;
 import com.example.hoangcongtuan.combannau.R;
 import com.example.hoangcongtuan.combannau.Utils.Common;
+import com.example.hoangcongtuan.combannau.Utils.CustomerMenuManager;
+import com.example.hoangcongtuan.combannau.Utils.ImageCached;
 import com.example.hoangcongtuan.combannau.Utils.Utils;
+import com.example.hoangcongtuan.combannau.customer.RVMenuCallBack;
+import com.example.hoangcongtuan.combannau.customer.adapter.MenuAdapter;
+import com.example.hoangcongtuan.combannau.models.Dish;
+import com.example.hoangcongtuan.combannau.models.DishObj;
 import com.example.hoangcongtuan.combannau.models.Menu;
 import com.example.hoangcongtuan.combannau.services.GPSTracker;
+import com.example.hoangcongtuan.combannau.widget.MarkerInfoWindow;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
@@ -64,10 +79,14 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener,
-        OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMyLocationClickListener{
+        OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMyLocationClickListener, GoogleMap.OnMarkerClickListener{
 
     private final static int RC_LOCATION = 1;
     private static final String TAG = MainActivity.class.getName();
@@ -77,15 +96,56 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private TextView tvUserName;
     private TextView tvEmail;
     private LatLng current_latlng;
+    private TextView tvStoreName;
+    @BindView(R.id.tvAddress)
+    TextView tvAddress;
+    private TextView tvDistance;
+    private TextView tvEndTime;
+    @BindView(R.id.rvMenu)
+    RecyclerView rvMenu;
+
+    @BindView(R.id.layout_bottom_sheet)
+    LinearLayout layout_bottom_sheet;
+
+    BottomSheetBehavior bottomSheetBehavior;
+    MenuAdapter adapter;
+
+
 //    private FirebaseFunctions mFunctions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
         init();
         initWidget();
         initMapFragment();
+
+        bottomSheetBehavior = BottomSheetBehavior.from(layout_bottom_sheet);
+        bottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View bottomSheet, int newState) {
+                switch (newState) {
+                    case BottomSheetBehavior.STATE_HIDDEN:
+                        break;
+
+                    case BottomSheetBehavior.STATE_EXPANDED:
+                        break;
+
+                    case BottomSheetBehavior.STATE_COLLAPSED:
+                        break;
+                }
+            }
+
+            @Override
+            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+
+            }
+        });
+
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+
     }
 
     private void init() {
@@ -94,6 +154,18 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 .requestEmail()
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+
+        adapter = new MenuAdapter(new ArrayList<Dish>());
+        adapter.setCallBack(new RVMenuCallBack() {
+            @Override
+            public void onOrder(int position) {
+                orderItem(position);
+            }
+        });
+    }
+
+    private void orderItem(int position) {
+        Toast.makeText(this, "Order Item " + position, Toast.LENGTH_SHORT).show();
     }
 
     private void initWidget() {
@@ -116,6 +188,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         toggleButton.syncState();
 
         navigationView.setNavigationItemSelectedListener(this);
+
+        rvMenu.setLayoutManager(new LinearLayoutManager(getApplicationContext(), LinearLayoutManager.HORIZONTAL, false));
+        rvMenu.setItemAnimator(new DefaultItemAnimator());
+        rvMenu.setAdapter(adapter);
 
         //get avatar
         final FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -229,49 +305,57 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void get_menus(JSONObject json_posts) {
+
+        Iterator<String> providers = json_posts.keys();
         List<String> menusId = new ArrayList<>();
+
         try {
-            JSONArray json_menus = json_posts.getJSONArray("menus");
-            for(int i = 0; i < json_menus.length(); i++) {
-                menusId.add(json_menus.getString(i));
+            while(providers.hasNext()) {
+                String provider = providers.next();
+                if (json_posts.get(provider) instanceof JSONArray) {
+                    JSONArray json_menus = json_posts.getJSONArray(provider);
+                    for(int i = 0; i < json_menus.length(); i++) {
+                        menusId.add(json_menus.getString(i));
+                    }
+                }
             }
-
-            show_provider_location(menusId);
-
         } catch (JSONException e) {
             e.printStackTrace();
-            // TODO: 10/13/18 Handle exception
         }
 
+        show_provider_location(menusId);
 
 
-//        for(Iterator key = json_posts.keys(); key.hasNext();) {
-//            try {
-//                JSONObject post = (JSONObject) json_posts.get((String) key.next());
-//                LatLng latLng = new LatLng(post.getDouble("latitude"), post.getDouble("longtitude"));
-//                Marker marker = googleMap.addMarker(
-//                        new MarkerOptions()
-//                                .position(latLng)
-//                                .title(post.getString("message"))
-//                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_icon)));
-//
-//            } catch (JSONException e) {
-//                e.printStackTrace();
+//        List<String> menusId = new ArrayList<>();
+//        try {
+//            JSONArray json_menus = json_posts.getJSONArray("menus");
+//            for(int i = 0; i < json_menus.length(); i++) {
+//                menusId.add(json_menus.getString(i));
 //            }
+//
+//            show_provider_location(menusId);
+//
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//            // TODO: 10/13/18 Handle exception
 //        }
-//        Log.d(TAG, "get_menus: JSON_POSTS = " + json_posts.toString());
     }
 
     private void show_provider_location(List<String> menusId) {
         DatabaseReference ref_menu = FirebaseDatabase.getInstance().getReference().child("menu");
+        int count = 0;
         for(String key: menusId) {
+            count++;
             Query query_getMenu = ref_menu.orderByKey().equalTo(key);
+            final int finalCount = count;
             query_getMenu.addListenerForSingleValueEvent(new ValueEventListener() {
+                int tmp_index = finalCount - 1;
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     if (dataSnapshot.exists()) {
                         for(DataSnapshot snapshot: dataSnapshot.getChildren()) {
                             Menu menu = snapshot.getValue(Menu.class);
+                            CustomerMenuManager.getsInstance().items.add(menu);
                             LatLng latLng = new LatLng(
                                     menu.latitude, menu.longtitude
                             );
@@ -280,7 +364,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                                     .position(latLng)
                                     .title(menu.name)
                                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_icon))
+                                    .snippet(menu.address)
                             );
+                            marker.setTag(tmp_index);
                         }
                     }
                     else {
@@ -294,6 +380,56 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
             });
         }
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        marker.showInfoWindow();
+        int menuPosition = (int) marker.getTag();
+        showMenu(menuPosition);
+        return true;
+    }
+
+    private void showMenu(int menuPosition) {
+        List<DishObj> items_obj = CustomerMenuManager.getsInstance().items.get(menuPosition).items;
+        List<Dish> items = new ArrayList<>();
+        for(DishObj obj: items_obj) {
+            Dish dish = new Dish(obj);
+            if (ImageCached.getInstance().bitmapHashMap.containsKey(obj.imageUrl)) {
+                dish.bitmap = ImageCached.getInstance().bitmapHashMap.get(obj.imageUrl);
+            }
+            else {
+                downLoadBitmap(obj.imageUrl, items_obj.indexOf(obj), adapter);
+                dish.bitmap = null;
+            }
+            items.add(dish);
+        }
+        tvAddress.setText(CustomerMenuManager.getsInstance().items.get(menuPosition).address);
+
+        adapter.replace(items);
+        adapter.notifyDataSetChanged();
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+    }
+
+    private void downLoadBitmap(final String imageUrl, final int pos, final MenuAdapter adapter) {
+        ImageRequest imageRequest = new ImageRequest(imageUrl,
+                new Response.Listener<Bitmap>() {
+                    @Override
+                    public void onResponse(Bitmap response) {
+                        ImageCached.getInstance().bitmapHashMap.put(imageUrl, response);
+                        adapter.getItems().get(pos).bitmap = response;
+                        adapter.notifyItemChanged(pos);
+                    }
+                }, 0, 0, ImageView.ScaleType.FIT_CENTER,
+                Bitmap.Config.RGB_565,
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+
+                    }
+                });
+
+        Utils.VolleyUtils.getsInstance(getApplicationContext()).getRequestQueue().add(imageRequest);
     }
 
     private class GetPostsTask extends AsyncTask<String, String, String> {
@@ -405,6 +541,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         googleMap.setMyLocationEnabled(true);
         googleMap.getUiSettings().setMyLocationButtonEnabled(true);
+        googleMap.setOnMarkerClickListener(this);
+
+        MarkerInfoWindow markerInfoWindow = new MarkerInfoWindow(this);
+        googleMap.setInfoWindowAdapter(markerInfoWindow);
 
         GPSTracker gpsTracker = new GPSTracker(MainActivity.this);
         if (gpsTracker.canGetLocation()) {

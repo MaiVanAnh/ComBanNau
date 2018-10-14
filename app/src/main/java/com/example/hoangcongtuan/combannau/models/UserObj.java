@@ -16,6 +16,7 @@ public class UserObj {
     public String user_name;
     public float latitude;
     public float longtitude;
+    public String store_name;
 
     public UserObj() {
 
@@ -30,6 +31,7 @@ public class UserObj {
         this.user_name = obj.user_name;
         this.latitude = obj.latitude;
         this.longtitude = obj.longtitude;
+        this.store_name = obj.store_name;
     }
 
 

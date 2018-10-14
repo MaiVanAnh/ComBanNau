@@ -97,4 +97,6 @@
     <string name="remove_menu">Remove menu</string>
     <string name="location_permission_title">Cấp quyền truy cập vị trí</string>
     <string name="location_peermission_message">Ứng dụng cần biết vị trí của bạn</string>
+    <string name="string_menu">Thực đơn</string>
+    <string name="rest">Còn lại</string>
 </resources>

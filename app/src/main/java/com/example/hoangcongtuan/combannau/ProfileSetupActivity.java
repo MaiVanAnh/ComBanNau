@@ -1,4 +1,4 @@
-package com.example.hoangcongtuan.combannau.common;
+package com.example.hoangcongtuan.combannau;
 
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -23,9 +23,6 @@ import android.widget.Toast;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.ImageRequest;
-import com.example.hoangcongtuan.combannau.AdminActivity;
-import com.example.hoangcongtuan.combannau.LoginActivity;
-import com.example.hoangcongtuan.combannau.R;
 import com.example.hoangcongtuan.combannau.Utils.AppUserManager;
 import com.example.hoangcongtuan.combannau.Utils.Utils;
 import com.example.hoangcongtuan.combannau.customer.activity.MainActivity;
