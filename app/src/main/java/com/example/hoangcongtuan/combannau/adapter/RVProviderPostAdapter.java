@@ -6,15 +6,18 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.hoangcongtuan.combannau.R;
 import com.example.hoangcongtuan.combannau.Utils.Common;
+import com.example.hoangcongtuan.combannau.Utils.Utils;
 import com.example.hoangcongtuan.combannau.models.Menu;
 import com.example.hoangcongtuan.combannau.models.Post;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 
 import butterknife.BindView;
@@ -45,7 +48,7 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     }
 
     //hold view cho moi item da load trong recycle view
-    public class PostHolder extends RecyclerView.ViewHolder {
+    public class PostHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         @BindView(R.id.tvTitle)
         TextView tvTitle;
         @BindView(R.id.tvStartTime)
@@ -61,6 +64,7 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             super(itemView);
             ButterKnife.bind(this, itemView);
             initWidget();
+            itemView.setOnClickListener(this);
         }
 
         private void initWidget() {
@@ -72,7 +76,10 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
             });
         }
 
+        @Override
+        public void onClick(View view) {
 
+        }
     }
 
     //holder view cho item dang load trong recycle view
@@ -108,8 +115,25 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
             postHolder.tvTitle.setText(menu.name);
             postHolder.tvAddress.setText(menu.address);
-            postHolder.tvEndTime.setText(menu.endTime);
-            postHolder.tvStartTime.setText(menu.startTime);
+
+            try {
+                postHolder.tvStartTime.setText(
+                        Utils.getTimeString(menu.startTime)
+                );
+            } catch (ParseException e) {
+                e.printStackTrace();
+                postHolder.tvStartTime.setText(menu.startTime);
+            }
+
+            try {
+                postHolder.tvEndTime.setText(
+                        Utils.getTimeString(menu.endTime)
+                );
+            } catch (ParseException e) {
+                e.printStackTrace();
+                postHolder.tvEndTime.setText(menu.endTime);
+            }
+
         }
     }
 

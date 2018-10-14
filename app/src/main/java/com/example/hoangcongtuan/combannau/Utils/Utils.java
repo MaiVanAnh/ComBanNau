@@ -22,8 +22,11 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * Created by hoangcongtuan on 3/21/18.
@@ -121,5 +124,34 @@ public class Utils {
         System.out.println("JSON: " + jsonString);
 
         return jsonString;
+    }
+
+    public static String getTimeString(String strDateTime) throws ParseException {
+        Calendar dateTime = Calendar.getInstance();
+        SimpleDateFormat sdfUS = new SimpleDateFormat("EEEE dd/MM/yyyy hh:mm a", Locale.US);
+
+        dateTime.setTime(
+                sdfUS.parse(strDateTime)
+        );
+
+        String timeString = "";
+        SimpleDateFormat sdf;
+        Calendar calendar = Calendar.getInstance();
+
+        if (calendar.get(Calendar.DAY_OF_YEAR) == dateTime.get(Calendar.DAY_OF_YEAR) &&
+                calendar.get(Calendar.YEAR) == dateTime.get(Calendar.YEAR)) {
+            sdf = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+        }
+        else if (calendar.get(Calendar.WEEK_OF_YEAR) == dateTime.get(Calendar.WEEK_OF_YEAR) &&
+                calendar.get(Calendar.YEAR) == dateTime.get(Calendar.YEAR)){
+            sdf = new SimpleDateFormat("EEEE hh:mm a", Locale.getDefault());
+        }
+        else {
+            sdf = new SimpleDateFormat("dd/MM/yyyy hh:mm a", Locale.getDefault());
+        }
+
+        timeString = sdf.format(dateTime.getTime());
+
+        return timeString;
     }
 }

@@ -2,6 +2,7 @@ package com.example.hoangcongtuan.combannau.customer.activity;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -13,6 +14,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -28,6 +30,7 @@ import com.example.hoangcongtuan.combannau.LoginActivity;
 import com.example.hoangcongtuan.combannau.R;
 import com.example.hoangcongtuan.combannau.Utils.Common;
 import com.example.hoangcongtuan.combannau.Utils.Utils;
+import com.example.hoangcongtuan.combannau.models.Menu;
 import com.example.hoangcongtuan.combannau.services.GPSTracker;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -46,8 +49,10 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -58,7 +63,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener,
         OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMyLocationClickListener{
@@ -77,10 +83,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         init();
         initWidget();
-
         initMapFragment();
     }
 
@@ -89,10 +93,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
-        // Build a GoogleSignInClient with the options specified by gso.
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-
-//        mFunctions = FirebaseFunctions.getInstance();
     }
 
     private void initWidget() {
@@ -183,14 +184,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
             }
         });
-
         tvEmail.setText(currentUser.getEmail());
-
         Common.getInstance().setUserName(tvUserName.getText().toString());
         Common.getInstance().setUser(FirebaseAuth.getInstance().getCurrentUser());
-
-
-
     }
 
     private void initMapFragment() {
@@ -229,36 +225,84 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void https_functions() {
         GetPostsTask get_https_json = new GetPostsTask();
-        get_https_json.execute("https://us-central1-combannau-1520822090740.cloudfunctions.net/getPosts");
+        get_https_json.execute("https://us-central1-combannau-1520822090740.cloudfunctions.net/getAvailableProvider");
     }
 
-    private void show_provider(JSONObject json_posts) {
-        for(Iterator key = json_posts.keys(); key.hasNext();) {
-            try {
-                JSONObject post = (JSONObject) json_posts.get((String) key.next());
-                LatLng latLng = new LatLng(post.getDouble("latitude"), post.getDouble("longtitude"));
-                Marker marker = googleMap.addMarker(
-                        new MarkerOptions()
-                                .position(latLng)
-                                .title(post.getString("message"))
-                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_icon)));
-
-            } catch (JSONException e) {
-                e.printStackTrace();
+    private void get_menus(JSONObject json_posts) {
+        List<String> menusId = new ArrayList<>();
+        try {
+            JSONArray json_menus = json_posts.getJSONArray("menus");
+            for(int i = 0; i < json_menus.length(); i++) {
+                menusId.add(json_menus.getString(i));
             }
+
+            show_provider_location(menusId);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+            // TODO: 10/13/18 Handle exception
         }
-        Log.d(TAG, "show_provider: JSON_POSTS = " + json_posts.toString());
+
+
+
+//        for(Iterator key = json_posts.keys(); key.hasNext();) {
+//            try {
+//                JSONObject post = (JSONObject) json_posts.get((String) key.next());
+//                LatLng latLng = new LatLng(post.getDouble("latitude"), post.getDouble("longtitude"));
+//                Marker marker = googleMap.addMarker(
+//                        new MarkerOptions()
+//                                .position(latLng)
+//                                .title(post.getString("message"))
+//                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_icon)));
+//
+//            } catch (JSONException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        Log.d(TAG, "get_menus: JSON_POSTS = " + json_posts.toString());
+    }
+
+    private void show_provider_location(List<String> menusId) {
+        DatabaseReference ref_menu = FirebaseDatabase.getInstance().getReference().child("menu");
+        for(String key: menusId) {
+            Query query_getMenu = ref_menu.orderByKey().equalTo(key);
+            query_getMenu.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if (dataSnapshot.exists()) {
+                        for(DataSnapshot snapshot: dataSnapshot.getChildren()) {
+                            Menu menu = snapshot.getValue(Menu.class);
+                            LatLng latLng = new LatLng(
+                                    menu.latitude, menu.longtitude
+                            );
+
+                            Marker marker = googleMap.addMarker(new MarkerOptions()
+                                    .position(latLng)
+                                    .title(menu.name)
+                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_icon))
+                            );
+                        }
+                    }
+                    else {
+                        // TODO: 10/13/18 Handle exception
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+        }
     }
 
     private class GetPostsTask extends AsyncTask<String, String, String> {
 
         protected void onPreExecute() {
             super.onPreExecute();
-
         }
 
         protected String doInBackground(String... params) {
-
 
             HttpURLConnection connection = null;
             BufferedReader reader = null;
@@ -309,7 +353,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             super.onPostExecute(result);
             try {
                 JSONObject json_posts = new JSONObject(result);
-                show_provider(json_posts);
+                get_menus(json_posts);
 
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -339,6 +383,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
             if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,
                     Manifest.permission.ACCESS_FINE_LOCATION)) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle(R.string.location_permission_title);
+                builder.setMessage(R.string.location_peermission_message);
+                builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        ActivityCompat.requestPermissions(MainActivity.this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION},
+                                RC_LOCATION);                    }
+                });
+                builder.setCancelable(false);
+                builder.create().show();
 
             } else {
                 ActivityCompat.requestPermissions(MainActivity.this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION},
@@ -360,8 +415,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             gpsTracker.showSettingsAlert();
         }
         https_functions();
-
-
     }
 
 

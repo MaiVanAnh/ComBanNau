@@ -5,6 +5,7 @@ import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.ProxyInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
@@ -24,6 +25,7 @@ import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.example.hoangcongtuan.combannau.BuildConfig;
+import com.example.hoangcongtuan.combannau.MenuManager;
 import com.example.hoangcongtuan.combannau.R;
 import com.example.hoangcongtuan.combannau.Utils.AppUserManager;
 import com.example.hoangcongtuan.combannau.Utils.Constants;
@@ -62,10 +64,17 @@ import butterknife.ButterKnife;
 
 public class CreateMenuActivity extends AppCompatActivity {
 
+    public static final String KEY_MENU_POSITION = "key_menu_position";
     private static final int RC_CREATE_DISH = 2;
     private static final int STATE_UPLOADING = 0;
     private static final int STATE_UPLOAD_SUCCESS = 1;
     private static final int STATE_UPLOAD_FAILED = 2;
+
+    public static final String KEY_ACT_MODE = "key_act_mode";
+    public static final int MODE_VIEW = 0;
+    public static final int MODE_EDIT = 1;
+    public static final int MODE_CREATE = 2;
+
     private static final String TAG = CreateMenuActivity.class.getName();
     @BindView(R.id.edtName)
     EditText edtName;
@@ -90,6 +99,8 @@ public class CreateMenuActivity extends AppCompatActivity {
     MenuAdapter adapter;
     int [] uploadState;
     String MAP_API_KEY = "AIzaSyBWplIXc_Z4k2eeuUlYV7G2biQcEi-S9Wc";
+    int mode;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -97,6 +108,36 @@ public class CreateMenuActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         init();
         initWidget();
+        loadMode();
+    }
+
+    private void loadMode() {
+        Intent intent = getIntent();
+        if (intent.hasExtra(KEY_ACT_MODE))
+            mode = intent.getIntExtra(KEY_ACT_MODE, MODE_CREATE);
+
+        switch (mode) {
+            case MODE_VIEW:
+                edtName.setKeyListener(null);
+                btnAdd.setVisibility(View.GONE);
+                int position = intent.getIntExtra(KEY_MENU_POSITION, 0);
+                // TODO: 10/12/18 Handle exception
+                loadMenu(position);
+                break;
+        }
+    }
+
+    private void loadMenu(int position) {
+        Menu menu = MenuManager.getInstance().items.get(position);
+
+        edtName.setText(menu.name);
+        tvAddress.setText(menu.address);
+        tvEndTime.setText(menu.endTime);
+
+        for(DishObj obj: menu.items) {
+            Dish dish = new Dish(obj);
+            adapter.getItems().add(dish);
+        }
     }
 
     private void init() {
@@ -248,6 +289,8 @@ public class CreateMenuActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        if (mode == MODE_VIEW)
+            return true;
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_create_menu, menu);
         return true;
@@ -362,6 +405,7 @@ public class CreateMenuActivity extends AppCompatActivity {
                 // TODO: 10/9/18 Keep order when push new value, top is newest
                 ref_owner_menu.child(strKey).setValue(strKey);
                 Toast.makeText(CreateMenuActivity.this, R.string.menu_uploaded, Toast.LENGTH_SHORT).show();
+                finishUploadMenu();
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
@@ -369,6 +413,12 @@ public class CreateMenuActivity extends AppCompatActivity {
                 Toast.makeText(CreateMenuActivity.this, R.string.menu_upload_failed, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void finishUploadMenu() {
+        MenuManager.getInstance().items.add(0, menu);
+        setResult(Activity.RESULT_OK);
+        finish();
     }
 
 

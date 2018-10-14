@@ -1,12 +1,14 @@
 package com.example.hoangcongtuan.combannau.provider.fragment;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -18,13 +20,16 @@ import android.widget.ImageView;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.ImageRequest;
+import com.example.hoangcongtuan.combannau.MenuManager;
 import com.example.hoangcongtuan.combannau.R;
 import com.example.hoangcongtuan.combannau.Utils.AppUserManager;
 import com.example.hoangcongtuan.combannau.Utils.Utils;
 import com.example.hoangcongtuan.combannau.adapter.RVProviderPostAdapter;
+import com.example.hoangcongtuan.combannau.interfaces.RecyclerTouchListener;
 import com.example.hoangcongtuan.combannau.models.Menu;
 import com.example.hoangcongtuan.combannau.models.Post;
 import com.example.hoangcongtuan.combannau.models.PostObj;
+import com.example.hoangcongtuan.combannau.provider.activity.CreateMenuActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -78,6 +83,25 @@ public class ProviderPostFragment extends Fragment {
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getContext());
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
+        recyclerView.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
+        recyclerView.addOnItemTouchListener(new RecyclerTouchListener(getContext().getApplicationContext(), recyclerView, new RecyclerTouchListener.ClickListener() {
+            @Override
+            public void onClick(View view, int position) {
+                viewMenu(position);
+            }
+
+            @Override
+            public void onLongClick(View view, int position) {
+
+            }
+        }));
+    }
+
+    private void viewMenu(int position) {
+        Intent intent = new Intent(getActivity(), CreateMenuActivity.class);
+        intent.putExtra(CreateMenuActivity.KEY_ACT_MODE, CreateMenuActivity.MODE_VIEW);
+        intent.putExtra(CreateMenuActivity.KEY_MENU_POSITION, position);
+        startActivity(intent);
     }
 
     private void downloadMyPost() {
@@ -107,6 +131,7 @@ public class ProviderPostFragment extends Fragment {
                 for(DataSnapshot snapshot: dataSnapshot.getChildren()) {
                     Menu menu = snapshot.getValue(Menu.class);
                     adapter.addPost(menu);
+                    MenuManager.getInstance().items.add(menu);
                 }
                 adapter.notifyDataSetChanged();
             }
@@ -117,6 +142,10 @@ public class ProviderPostFragment extends Fragment {
             }
         });
 
+    }
+
+    public void update_new_post() {
+        adapter.insertPost(0, MenuManager.getInstance().items.get(0));
     }
 
 //    public void update_new_post() {

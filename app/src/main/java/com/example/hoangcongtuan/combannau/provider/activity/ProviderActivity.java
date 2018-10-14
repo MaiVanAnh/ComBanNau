@@ -57,7 +57,7 @@ import java.io.InputStream;
 
 public class ProviderActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
     private static final String TAG = ProviderActivity.class.getName().toString();
-    private static final int RC_CREATE_POST = 1;
+    public static final int RC_CREATE_POST = 1;
     private TextView tvUserName;
     private TextView tvEmail;
     private GoogleSignInClient mGoogleSignInClient;
@@ -258,6 +258,7 @@ public class ProviderActivity extends AppCompatActivity implements NavigationVie
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(ProviderActivity.this, CreateMenuActivity.class);
+                intent.putExtra(CreateMenuActivity.KEY_ACT_MODE, CreateMenuActivity.MODE_CREATE);
                 startActivityForResult(intent, RC_CREATE_POST);
             }
         });
@@ -300,7 +301,7 @@ public class ProviderActivity extends AppCompatActivity implements NavigationVie
         switch (requestCode) {
             case RC_CREATE_POST:
                 if (resultCode == RESULT_OK) {
-                    //postFragment.update_new_post();
+                    postFragment.update_new_post();
                 }
                 break;
             case CreateDishActivity.RC_PICK_IMAGE:

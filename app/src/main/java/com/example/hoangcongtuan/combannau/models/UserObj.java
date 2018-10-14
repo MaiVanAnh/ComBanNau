@@ -14,6 +14,8 @@ public class UserObj {
     public boolean male;
     public String phone;
     public String user_name;
+    public float latitude;
+    public float longtitude;
 
     public UserObj() {
 
@@ -26,6 +28,8 @@ public class UserObj {
         this.male = obj.male;
         this.phone = obj.phone;
         this.user_name = obj.user_name;
+        this.latitude = obj.latitude;
+        this.longtitude = obj.longtitude;
     }
 
 

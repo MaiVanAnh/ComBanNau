@@ -15,6 +15,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.example.hoangcongtuan.combannau.Utils.AppUserManager;
+import com.example.hoangcongtuan.combannau.common.ProfileSetupActivity;
 import com.example.hoangcongtuan.combannau.customer.activity.MainActivity;
 import com.example.hoangcongtuan.combannau.models.User;
 import com.example.hoangcongtuan.combannau.models.UserObj;

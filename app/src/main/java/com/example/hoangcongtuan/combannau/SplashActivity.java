@@ -2,12 +2,12 @@ package com.example.hoangcongtuan.combannau;
 
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.os.UserManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
 import com.example.hoangcongtuan.combannau.Utils.AppUserManager;
+import com.example.hoangcongtuan.combannau.common.ProfileSetupActivity;
 import com.example.hoangcongtuan.combannau.customer.activity.MainActivity;
 import com.example.hoangcongtuan.combannau.models.User;
 import com.example.hoangcongtuan.combannau.models.UserObj;
