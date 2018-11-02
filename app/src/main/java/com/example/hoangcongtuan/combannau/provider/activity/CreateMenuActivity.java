@@ -19,15 +19,20 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.ImageRequest;
 import com.example.hoangcongtuan.combannau.MenuManager;
 import com.example.hoangcongtuan.combannau.R;
 import com.example.hoangcongtuan.combannau.Utils.AppUserManager;
 import com.example.hoangcongtuan.combannau.Utils.Constants;
 import com.example.hoangcongtuan.combannau.Utils.GraphicsUtils;
+import com.example.hoangcongtuan.combannau.Utils.ImageCached;
 import com.example.hoangcongtuan.combannau.Utils.Utils;
 import com.example.hoangcongtuan.combannau.models.Dish;
 import com.example.hoangcongtuan.combannau.models.DishObj;
@@ -120,6 +125,10 @@ public class CreateMenuActivity extends AppCompatActivity {
                 // TODO: 10/12/18 Handle exception
                 loadMenu(position);
                 break;
+            case MODE_EDIT:
+                int position_edit = intent.getIntExtra(KEY_MENU_POSITION, 0);
+                loadMenu(position_edit);
+                break;
         }
     }
 
@@ -132,8 +141,35 @@ public class CreateMenuActivity extends AppCompatActivity {
 
         for(DishObj obj: menu.items) {
             Dish dish = new Dish(obj);
+            if (ImageCached.getInstance().bitmapHashMap.containsKey(dish.imageUrl))
+                dish.bitmap = ImageCached.getInstance().bitmapHashMap.get(dish.imageUrl);
+            else {
+                downLoadBitmap(obj.imageUrl, menu.items.indexOf(obj), adapter);
+                dish.bitmap = null;
+            }
             adapter.getItems().add(dish);
         }
+    }
+
+    private void downLoadBitmap(final String imageUrl, final int pos, final MenuAdapter adapter) {
+        ImageRequest imageRequest = new ImageRequest(imageUrl,
+                new Response.Listener<Bitmap>() {
+                    @Override
+                    public void onResponse(Bitmap response) {
+                        ImageCached.getInstance().bitmapHashMap.put(imageUrl, response);
+                        adapter.getItems().get(pos).bitmap = response;
+                        adapter.notifyItemChanged(pos);
+                    }
+                }, 0, 0, ImageView.ScaleType.FIT_CENTER,
+                Bitmap.Config.RGB_565,
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+
+                    }
+                });
+
+        Utils.VolleyUtils.getsInstance(getApplicationContext()).getRequestQueue().add(imageRequest);
     }
 
     private void init() {
@@ -149,7 +185,7 @@ public class CreateMenuActivity extends AppCompatActivity {
         strEndTimeUS = sdfUS.format(calendar.getTime());
 
         menuBuilder = new Menu.Builder(AppUserManager.getInstance().getUid());
-        adapter = new MenuAdapter(new ArrayList<Dish>());
+        adapter = new MenuAdapter(new ArrayList<Dish>(), true);
     }
 
     private void initWidget() {
@@ -184,6 +220,11 @@ public class CreateMenuActivity extends AppCompatActivity {
                 startActivityForResult(intent, RC_CREATE_DISH);
             }
         });
+
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
     }
 
     class GeoCoding extends AsyncTask<String, Void, String> {
@@ -231,7 +272,7 @@ public class CreateMenuActivity extends AppCompatActivity {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        int currenHour = currentCalendar.get(Calendar.HOUR);
+        int currenHour = currentCalendar.get(Calendar.HOUR_OF_DAY);
         int currentMinute = currentCalendar.get(Calendar.MINUTE);
 
         TimePickerDialog timePickerDialog = new TimePickerDialog(CreateMenuActivity.this, new TimePickerDialog.OnTimeSetListener() {
@@ -316,12 +357,16 @@ public class CreateMenuActivity extends AppCompatActivity {
                 // TODO: 10/7/18 Finish action
                 startUploadMenu();
                 break;
+            case android.R.id.home:
+                onBackPressed();
+                break;
         }
         return true;
     }
 
     private void uploadImage(final String strKey) {
         menu = menuBuilder.build();
+        menu.id = strKey;
         uploadState = new int[menu.items.size()];
         Arrays.fill(uploadState, STATE_UPLOADING);
 

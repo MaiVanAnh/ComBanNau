@@ -99,4 +99,10 @@
     <string name="location_peermission_message">Ứng dụng cần biết vị trí của bạn</string>
     <string name="string_menu">Thực đơn</string>
     <string name="rest">Còn lại</string>
+    <string name="available_time">Vẫn còn</string>
+    <string name="item_order">Đặt hàng</string>
+    <string name="remove_menu_explain">Bạn có chắc muốn xóa thực đơn này hay ko?</string>
+    <string name="no">Không</string>
+    <string name="yes">Có</string>
+    <string name="error_removed_menu">Có lỗi khi xóa thực đơn</string>
 </resources>

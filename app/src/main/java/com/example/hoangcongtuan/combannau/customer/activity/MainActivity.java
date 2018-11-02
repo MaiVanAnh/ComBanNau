@@ -78,6 +78,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -100,7 +101,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @BindView(R.id.tvAddress)
     TextView tvAddress;
     private TextView tvDistance;
-    private TextView tvEndTime;
+    @BindView(R.id.tvEndTime)
+    TextView tvEndTime;
     @BindView(R.id.rvMenu)
     RecyclerView rvMenu;
 
@@ -155,7 +157,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        adapter = new MenuAdapter(new ArrayList<Dish>());
+        adapter = new MenuAdapter(new ArrayList<Dish>(), false);
         adapter.setCallBack(new RVMenuCallBack() {
             @Override
             public void onOrder(int position) {
@@ -405,6 +407,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             items.add(dish);
         }
         tvAddress.setText(CustomerMenuManager.getsInstance().items.get(menuPosition).address);
+        try {
+            tvEndTime.setText(Utils.getTillNow(CustomerMenuManager.getsInstance().items.get(menuPosition).endTime));
+        } catch (ParseException e) {
+            e.printStackTrace();
+            tvEndTime.setText(R.string.available_time);
+            // TODO: 10/14/18 Handle Exception
+        }
 
         adapter.replace(items);
         adapter.notifyDataSetChanged();
@@ -430,6 +439,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 });
 
         Utils.VolleyUtils.getsInstance(getApplicationContext()).getRequestQueue().add(imageRequest);
+    }
+
+    @Override
+    public void onBackPressed() {
+        //super.onBackPressed();
+        if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED)
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        else super.onBackPressed();
     }
 
     private class GetPostsTask extends AsyncTask<String, String, String> {

@@ -20,4 +20,8 @@
     <color name="marker_tint">#0e842a</color>
     <color name="background_color">#E4E4E4</color>
     <color name="segment_background">#FFFFFF</color>
+    <color name="bottom_sheet_rest_time">#E53935</color>
+    <color name="item_price_background">#64DD17</color>
+    <color name="item_name_color">#212121</color>
+    <color name="item_region_color">#424242</color>
 </resources>

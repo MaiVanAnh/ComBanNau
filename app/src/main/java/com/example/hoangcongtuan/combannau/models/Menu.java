@@ -7,6 +7,7 @@ import java.util.List;
  * Create by hoangcongtuan on 10/6/18.
  */
 public class Menu {
+    public String id;
     public String ownerId;
     public String name;
     public float latitude;
@@ -30,8 +31,7 @@ public class Menu {
         this.address = builder.address;
         this.items = new ArrayList<>();
         this.items.addAll(builder.items);
-
-
+        this.id = builder.id;
     }
 
     public static class Builder {
@@ -42,6 +42,7 @@ public class Menu {
         String startTime;
         String endTime;
         String address;
+        String id;
         List<DishObj> items;
 
         public Builder(String ownerId) {

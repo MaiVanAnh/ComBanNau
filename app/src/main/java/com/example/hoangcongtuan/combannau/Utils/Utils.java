@@ -154,4 +154,28 @@ public class Utils {
 
         return timeString;
     }
+
+    public static String getTillNow(String strTime) throws ParseException {
+        Calendar startCal = Calendar.getInstance();
+
+        Calendar endCal = Calendar.getInstance();
+        endCal.setTime(
+                Common.sdf.parse(strTime)
+        );
+
+        long milis = endCal.getTimeInMillis() - startCal.getTimeInMillis();
+
+        long second = milis / 1000;
+        long minute = second / 60;
+
+        long hour = minute / 60;
+
+        String result = "";
+        if (hour == 0)
+            result = minute + " phút";
+        else {
+            result = hour + " giờ " + minute % 60 + " phút";
+        }
+        return "Còn " + result;
+    }
 }

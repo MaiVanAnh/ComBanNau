@@ -16,6 +16,7 @@ import android.support.design.widget.TextInputEditText;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -159,6 +160,11 @@ public class CreateDishActivity extends AppCompatActivity {
 
         imgCancel.setVisibility(View.INVISIBLE);
 
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+
     }
 
     private void showAddKeyWordsDialog() {
@@ -192,6 +198,16 @@ public class CreateDishActivity extends AppCompatActivity {
         else
             setResult(RESULT_CANCELED, returnIntent);
         finish();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                break;
+        }
+        return true;
     }
 
     private void chose_image() {

@@ -10,7 +10,6 @@ import android.widget.TextView;
 
 import com.example.hoangcongtuan.combannau.R;
 import com.example.hoangcongtuan.combannau.customer.RVMenuCallBack;
-import com.example.hoangcongtuan.combannau.customer.callback;
 import com.example.hoangcongtuan.combannau.models.Dish;
 
 import java.util.List;
@@ -25,9 +24,11 @@ import butterknife.ButterKnife;
 public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.ItemViewHolder> {
     List<Dish> items;
     RVMenuCallBack callBack;
+    boolean showRemove;
 
-    public MenuAdapter(List<Dish> items) {
+    public MenuAdapter(List<Dish> items, boolean showRemove) {
         this.items = items;
+        this.showRemove = showRemove;
     }
 
     public void setCallBack(RVMenuCallBack callBack) {
@@ -43,7 +44,7 @@ public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.ItemViewHolder
     @Override
     public MenuAdapter.ItemViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-        return new ItemViewHolder(inflater.inflate(R.layout.layout_customer_menu_overview, parent, false));
+        return new ItemViewHolder(inflater.inflate(R.layout.layout_customer_item_overview, parent, false));
     }
 
     @Override
@@ -63,6 +64,7 @@ public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.ItemViewHolder
                     callBack.onOrder(position);
             }
         });
+        holder.imgRemove.setVisibility(showRemove == true?View.VISIBLE:View.INVISIBLE);
     }
 
     @Override
@@ -88,6 +90,8 @@ public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.ItemViewHolder
         TextView tvPrice;
         @BindView(R.id.imgOrder)
         ImageView imgOrder;
+        @BindView(R.id.imgRemove)
+        ImageView imgRemove;
 
         ItemViewHolder(View itemView) {
             super(itemView);

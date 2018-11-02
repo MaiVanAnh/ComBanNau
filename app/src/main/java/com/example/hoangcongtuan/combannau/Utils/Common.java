@@ -5,12 +5,18 @@ import android.widget.ImageView;
 
 import com.google.firebase.auth.FirebaseUser;
 
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+
 /**
  * Created by hoangcongtuan on 3/23/18.
  */
 
 public class Common  {
     private static Common instance;
+
+    public static final SimpleDateFormat sdf = new SimpleDateFormat("EEEE dd/MM/yyyy hh:mm a", Locale.US);
+
 
     private FirebaseUser user;
     private Bitmap bmpAvatar;

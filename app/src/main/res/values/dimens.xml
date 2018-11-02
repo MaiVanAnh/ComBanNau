@@ -6,4 +6,6 @@
     <dimen name="card_margin">5dp</dimen>
     <dimen name="card_margin_left_right">8dp</dimen>
     <dimen name="card_album_radius">1dp</dimen>
+    <dimen name="item_region_size">12sp</dimen>
+    <dimen name="item_order_size">11sp</dimen>
 </resources>

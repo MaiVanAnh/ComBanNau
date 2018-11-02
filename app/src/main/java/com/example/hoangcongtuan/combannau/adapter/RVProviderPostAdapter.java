@@ -14,6 +14,7 @@ import android.widget.Toast;
 import com.example.hoangcongtuan.combannau.R;
 import com.example.hoangcongtuan.combannau.Utils.Common;
 import com.example.hoangcongtuan.combannau.Utils.Utils;
+import com.example.hoangcongtuan.combannau.interfaces.RecyclerTouchListener;
 import com.example.hoangcongtuan.combannau.models.Menu;
 import com.example.hoangcongtuan.combannau.models.Post;
 
@@ -32,8 +33,9 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     private final static String TAG = RVProviderPostAdapter.class.getName();
     private ArrayList<Menu> menus;
     private Context mContext;
-
     private LinearLayoutManager linearLayoutManager;
+
+    OnActionPerform onActionPerform;
 
     //type of item
     private final static int ITEM_LOADED = 0;
@@ -47,8 +49,12 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
     }
 
+    public void setOnActionPerform(OnActionPerform onActionPerform) {
+        this.onActionPerform = onActionPerform;
+    }
+
     //hold view cho moi item da load trong recycle view
-    public class PostHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    public class PostHolder extends RecyclerView.ViewHolder {
         @BindView(R.id.tvTitle)
         TextView tvTitle;
         @BindView(R.id.tvStartTime)
@@ -59,27 +65,36 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         TextView tvAddress;
         @BindView(R.id.imgRemove)
         ImageView imgRemove;
+        @BindView(R.id.imgEdit)
+        ImageView imgEdit;
+
+        OnActionPerform onActionPerform;
 
         public PostHolder(View itemView) {
             super(itemView);
             ButterKnife.bind(this, itemView);
             initWidget();
-            itemView.setOnClickListener(this);
         }
 
         private void initWidget() {
             imgRemove.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Toast.makeText(getContext(), R.string.remove_menu, Toast.LENGTH_SHORT).show();
+                    onActionPerform.onRemove(view, getAdapterPosition());
+                }
+            });
+            imgEdit.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    onActionPerform.onEdit(view, getAdapterPosition());
                 }
             });
         }
 
-        @Override
-        public void onClick(View view) {
-
+        public void setOnClickListener(OnActionPerform onActionPerform) {
+            this.onActionPerform = onActionPerform;
         }
+
     }
 
     //holder view cho item dang load trong recycle view
@@ -111,7 +126,7 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
         if (holder instanceof PostHolder) {
             PostHolder postHolder = (PostHolder) holder;
-            Menu menu = menus.get(position);
+            final Menu menu = menus.get(position);
 
             postHolder.tvTitle.setText(menu.name);
             postHolder.tvAddress.setText(menu.address);
@@ -133,6 +148,19 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
                 e.printStackTrace();
                 postHolder.tvEndTime.setText(menu.endTime);
             }
+
+            ((PostHolder) holder).setOnClickListener(new OnActionPerform() {
+                @Override
+                public void onRemove(View view, int position) {
+                    onActionPerform.onRemove(view, position);
+                }
+
+                @Override
+                public void onEdit(View view, int position) {
+                    onActionPerform.onEdit(view, position);
+                }
+            });
+
 
         }
     }
@@ -172,5 +200,13 @@ public class RVProviderPostAdapter extends RecyclerView.Adapter<RecyclerView.Vie
     public void insertPost(int position, Menu menu) {
         menus.add(position, menu);
         this.notifyItemInserted(position);
+    }
+
+
+
+    public interface OnActionPerform {
+        void onRemove(View view, int position);
+
+        void onEdit(View view, int position);
     }
 }
